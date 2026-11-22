@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Báo cáo COM2034 – Quản lý nhà trọ</title>
+<style>
+body { font: 16px/1.55 Calibri, Arial, sans-serif; color: #172637; max-width: 56rem; margin: 3rem auto; padding: 0 1rem; }
+h1, h2 { color: #153d66; line-height: 1.25; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #9eb5c9; padding: .5rem .65rem; vertical-align: top; text-align: left; }
+th { background: #eaf1f7; }
+code { color: #153d66; }
+@media print { body { margin: 0; } tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<header>
+<p>FPT Polytechnic · COM2034 · Quản trị cơ sở dữ liệu với SQL Server</p>
+<h1>Xây dựng và quản trị cơ sở dữ liệu quản lý nhà trọ cho thuê</h1>
+<p>Họ tên sinh viên: ____________________<br>Tên đăng nhập: ____________________<br>Lớp: ____________________</p>
+</header>
+<h2>1. Thiết kế và cài đặt</h2>
+<p>Cơ sở dữ liệu <code>QLNHATRO</code> lưu tin cho thuê nhà trọ ở Hà Nội, thông tin liên hệ và đánh giá của thành viên. Mỗi tin gắn với một loại nhà và một người liên hệ. Bảng <code>DANHGIA</code> biểu diễn quan hệ nhiều–nhiều giữa người dùng và nhà trọ. Khóa chính ghép cho phép mỗi người dùng có tối đa một đánh giá trên mỗi tin.</p>
+<table>
+<thead><tr><th scope="col">Bảng</th><th scope="col">Cột và vai trò</th><th scope="col">Ràng buộc</th></tr></thead>
+<tbody>
+<tr><th scope="row">LOAINHA</th><td><code>MaLoai</code> là khóa chính kiểu <code>tinyint</code> tự tăng. <code>TenLoai</code> là tên loại, kiểu <code>nvarchar(50)</code>.</td><td>Tên bắt buộc, duy nhất và có nội dung.</td></tr>
+<tr><th scope="row">NGUOIDUNG</th><td><code>MaND</code> là khóa chính kiểu <code>int</code> tự tăng. <code>HoTen</code> dùng <code>nvarchar(60)</code>. <code>GioiTinh</code> dùng <code>nchar(1)</code>. <code>DienThoai</code> và <code>Email</code> dùng <code>varchar(15)</code> và <code>varchar(120)</code>. <code>SoNha</code>, <code>Duong</code>, <code>Phuong</code>, <code>Quan</code> là các phần địa chỉ kiểu <code>nvarchar</code>.</td><td>Mọi cột đều bắt buộc. Giới tính dùng mã <code>M</code> hoặc <code>F</code>. Điện thoại có từ 10 đến 15 chữ số. Email duy nhất và được kiểm tra cú pháp cơ bản.</td></tr>
+<tr><th scope="row">NHATRO</th><td><code>MaNhaTro</code> là khóa chính kiểu <code>int</code> tự tăng. <code>MaLoai</code> và <code>MaLienHe</code> là khóa ngoại. <code>DienTich</code> dùng <code>decimal(6,2)</code> theo m², <code>Gia</code> dùng <code>int</code> theo đồng. <code>SoNha</code>, <code>Duong</code>, <code>Phuong</code>, <code>Quan</code> mô tả địa chỉ tin. <code>MoTa</code> dùng <code>nvarchar(500)</code>. <code>NgayDang</code> dùng <code>date</code>.</td><td>Mọi cột đều bắt buộc. Diện tích và giá phải dương. Mô tả và từng phần địa chỉ phải có nội dung. Ngày đăng mặc định là ngày hiện tại khi chèn trực tiếp và bỏ qua cột này.</td></tr>
+<tr><th scope="row">DANHGIA</th><td><code>MaNhaTro</code> và <code>MaND</code> là khóa ngoại đồng thời tạo thành khóa chính. <code>TrangThai</code> dùng <code>varchar(7)</code>. <code>NoiDung</code> dùng <code>nvarchar(500)</code>.</td><td>Trạng thái nhận <code>LIKE</code> hoặc <code>DISLIKE</code>. Nội dung có thể là <code>NULL</code>. Khi nhập nội dung thì cần có ít nhất một ký tự ngoài dấu cách.</td></tr>
+</tbody>
+</table>
+<p>Các cột văn bản tiếng Việt dùng Unicode. Số điện thoại lưu dưới dạng chuỗi để giữ chữ số 0 đầu. Chỉ mục trên quận, loại và ngày hỗ trợ tìm kiếm. Chỉ mục ngày hỗ trợ xóa theo khoảng thời gian. Chỉ mục trạng thái và mã nhà trọ hỗ trợ tổng hợp đánh giá. Các khóa ngoại giữ liên kết khi chèn, sửa hoặc xóa.</p>
+<h2>2. Dữ liệu mẫu và chức năng</h2>
+<p>Dữ liệu giả lập có 3 loại nhà, 10 người dùng, 11 tin cho thuê và 16 đánh giá. Ba thủ tục chèn kiểm tra tham số bắt buộc, định dạng và ràng buộc liên quan. Kịch bản kiểm thử gọi mỗi thủ tục một lần với dữ liệu hợp lệ và một lần thiếu dữ liệu bắt buộc.</p>
+<p>Thủ tục tìm kiếm nhận các bộ lọc tùy chọn theo quận, diện tích, ngày, giá và loại. Kết quả hiển thị diện tích như <code>30,5 m2</code>, giá như <code>1.700.000</code> và ngày như <code>01-10-2026</code>. Hàm tra cứu người dùng trả mã 1 cho hồ sơ mẫu của Thắng. Hàm đếm đánh giá trả 3 LIKE và 1 DISLIKE cho tin số 1. View lấy 10 tin có nhiều LIKE nhất và dùng mã tin để phân thứ tự khi cùng số LIKE. Thủ tục xem đánh giá kết hợp bảng người dùng để lấy tên người đánh giá.</p>
+<p>Hai thủ tục xóa lọc theo ngưỡng DISLIKE hoặc khoảng ngày đăng, xóa đánh giá trước rồi xóa tin trong cùng giao dịch. Nếu có lỗi, thủ tục hoàn tác giao dịch do nó mở hoặc quay về điểm lưu khi giao dịch ngoài còn có thể ghi. Nếu giao dịch ngoài đã lỗi và không thể ghi, bên gọi phải hoàn tác toàn bộ. Trong kiểm thử, ngưỡng 1 chọn tin số 3 và ngày 15-10-2026 chọn tin số 8. Mỗi lần xóa được hoàn tác để bảo toàn dữ liệu mẫu.</p>
+<h2>3. Tạo người dùng, phân quyền và sao lưu</h2>
+<ol>
+<li>Trong SSMS, kết nối bằng tài khoản cài đặt có quyền tạo login. Chạy các tệp <code>01_ThietKe_DuLieu.sql</code>, <code>02_ChucNang.sql</code> và <code>03_KiemThu.sql</code> theo thứ tự.</li>
+<li>Bật <em>Query → SQLCMD Mode</em> cho <code>04_PhanQuyen.sql</code> và khai báo bốn biến <code>AdminLogin</code>, <code>MemberLogin</code>, <code>AdminPassword</code>, <code>MemberPassword</code> bằng <code>:setvar</code> trong phiên chạy. Đặt hai login riêng cho bài và hai mật khẩu mạnh khác nhau. Máy chủ cần hỗ trợ SQL Server Authentication để kết nối lại bằng hai login này.</li>
+<li><code>CREATE LOGIN</code> tạo danh tính tại máy chủ. <code>CREATE USER ... FOR LOGIN</code> ánh xạ danh tính vào <code>QLNHATRO</code>. Người quản trị được đưa vào <code>db_owner</code> của cơ sở dữ liệu này. Kịch bản không cấp vai trò quản trị cấp máy chủ.</li>
+<li>Thành viên được cấp <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code> và <code>REFERENCES</code> trên bốn bảng nghiệp vụ. Quyền <code>EXECUTE</code> dùng cho thủ tục và hàm vô hướng. Quyền <code>SELECT</code> dùng cho view và hàm trả bảng. Phép thử quyền phải cho kết quả 1 ở các cột truy cập và 0 ở quyền sao lưu.</li>
+<li>Mở kết nối mới bằng SQL Server Authentication với login quản trị đã khai báo trong tệp <code>04</code>. Chạy <code>05_SaoLuu.sql</code> trong kết nối mới. Kịch bản kiểm tra login được ánh xạ tới <code>QLNhaTroAdmin</code> và hiển thị đường dẫn tệp sao lưu. Nếu cần chọn vị trí khác, gán đường dẫn đầy đủ của tệp <code>.bak</code> cho <code>@BakPath</code> tại thư mục dịch vụ SQL Server có quyền ghi. Sau khi chạy lại tệp <code>02</code>, chạy lại tệp <code>04</code> để cấp lại quyền cho các đối tượng được tạo lại.</li>
+</ol>
+<h2>4. Minh chứng và hồ sơ nộp</h2>
+<p>Video Y4 cần hiện tên máy trùng tên đăng nhập sinh viên, thao tác tạo hai login, ánh xạ hai user, cấp quyền, kết quả kiểm tra quyền và thao tác sao lưu trong kết nối quản trị mới. Khi ghi hình, che giá trị mật khẩu. Gói ZIP gồm tệp dữ liệu <code>.mdf</code>, tệp nhật ký <code>.ldf</code>, các tệp SQL, báo cáo và video. Điền thông tin sinh viên và dùng tên gói do giảng viên công bố.</p>
+<p>Tài liệu yêu cầu: <em>COM2034 – Quản trị CSDL với SQL Server, Assignment</em>, FPT Polytechnic, trang 3–9.</p>
+</body>
+</html>
